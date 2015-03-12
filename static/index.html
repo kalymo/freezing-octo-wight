@@ -82,7 +82,7 @@ if(showhide == "show"){
         $scope.processLogin = function processLogin() {
           console.log("Trying to log in");
           login('hide');
-          socket.emit('login', $scope.password);
+          socket.emit('login',{'username':$scope.name2,'password':$scope.password});
         };
 
 
