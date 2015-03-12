@@ -1,15 +1,30 @@
 import os
 import uuid
+import psycopg2
+import psycopg2.extras
 from flask import Flask, session
 from flask.ext.socketio import SocketIO, emit
 
-app = Flask(__name__, static_url_path='')
-app.config['SECRET_KEY'] = 'secret!'
+#login
+#store messages in database
+#load previous messages
+#search for term
 
+app = Flask(__name__, static_url_path='')
+app.config['SECRET_KEY'] = 'fnejosablgjrlbfiu'
+app.debug = True
 socketio = SocketIO(app)
 
 messages = [{'text':'test', 'name':'testName'}]
 users = {}
+
+def connectToDB():
+  connectionString = 'dbname=irc user=postgres password=Br380712 host=localhost'
+  try:
+    return psycopg2.connect(connectionString)
+  except:
+    print("Can't connect to database")
+
 
 def updateRoster():
     names = []
@@ -51,13 +66,21 @@ def on_identify(message):
 
 
 @socketio.on('login', namespace='/chat')
-def on_login(pw):
-    print 'login '  + pw
-    #users[session['uuid']]={'username':message}
-    #updateRoster()
+def on_login(datainfo):
+    print 'login '
+    username = datainfo['username']
+    password = datainfo['password']
+    conn = connectToDB()
+    cur=conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    query = "select * from users WHERE username = %s AND password = %s" 
+    cur.execute(query, (username, password))
+    result = cur.fetchone()
+    if result:
+        users[session['uuid']]={'username': username}
+        session['username']=username
+        session['id']=result['id']
+    updateRoster()
 
-
-    
 @socketio.on('disconnect', namespace='/chat')
 def on_disconnect():
     print 'disconnect'
