@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en" ng-app>
   <head>
-    <title>Chat Example</title>
+    <title>The Fun Chat :D</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/css/bootstrap.min.css">
     <link rel="stylesheet" href="/css/bootstrap-responsive.min.css">
@@ -82,7 +82,7 @@ if(showhide == "show"){
         $scope.processLogin = function processLogin() {
           console.log("Trying to log in");
           login('hide');
-          socket.emit('login', $scope.password);
+          socket.emit('login', {'username' : $scope.name2, 'password' : $scope.password});
         };
 
 
@@ -130,7 +130,7 @@ if(showhide == "show"){
         </div>
       </div>
       <div class="page-header">
-        <h1>Chat Example</h1>
+        <h1>The Fun Chat :D</h1>
       </div>
       <div class="row">
         <div class="span3">
