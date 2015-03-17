@@ -19,7 +19,7 @@ messages = [{'text':'test', 'name':'testName'}]
 users = {}
 
 def connectToDB():
-  connectionString = 'dbname=irc user=postgres password=Br380712 host=localhost'
+  connectionString = 'dbname=irc user=postgres password=postgres host=localhost'
   try:
     return psycopg2.connect(connectionString)
   except:
@@ -41,22 +41,30 @@ def updateRoster():
 @socketio.on('connect', namespace='/chat')
 def test_connect():
     session['uuid']=uuid.uuid1()
-    session['username']='starter name'
+    #session['username']='starter name' //comment out to stop non-users from posting
     print 'connected'
     
     users[session['uuid']]={'username':'New User'}
     updateRoster()
 
 
-    for message in messages:
-        emit('message', message)
+    
 
 @socketio.on('message', namespace='/chat')
 def new_message(message):
     #tmp = {'text':message, 'name':'testName'}
-    tmp = {'text':message, 'name':users[session['uuid']]['username']}
-    messages.append(tmp)
-    emit('message', tmp, broadcast=True)
+    if 'username' in session:
+        #print("his name is", session['username'])  //Debug code only
+        tmp = {'text':message, 'name':users[session['uuid']]['username']}
+        messages.append(tmp)
+        emit('message', tmp, broadcast=True)
+        
+        conn = connectToDB()
+        cur=conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        query = "INSERT INTO messages VALUES(DEFAULT, %s, %s)" 
+        cur.execute(query, (message, session['id']))
+        conn.commit()
+        
     
 @socketio.on('identify', namespace='/chat')
 def on_identify(message):
@@ -76,10 +84,18 @@ def on_login(datainfo):
     cur.execute(query, (username, password))
     result = cur.fetchone()
     if result:
-        users[session['uuid']]={'username': username}
-        session['username']=username
+        users[session['uuid']]={'username': datainfo['username']}
+        session['username']=datainfo['username']
         session['id']=result['id']
-    updateRoster()
+        
+        getMessages = "SELECT text, username FROM messages JOIN users ON messages.user_id = users.id"
+        cur.execute(getMessages)
+        messages = cur.fetchall()
+        
+        for message in messages:
+            message = {'text': message['text'], 'name': message['username']}
+            emit('message', message)
+        updateRoster()
 
 @socketio.on('disconnect', namespace='/chat')
 def on_disconnect():
