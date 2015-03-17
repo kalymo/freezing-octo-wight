@@ -46,6 +46,7 @@ if(showhide == "show"){
         $scope.roster = [];
         $scope.name = '';
         $scope.text = '';
+        $scope.searchTerm = '';
 
         socket.on('connect', function () {
           console.log('connected');
@@ -73,6 +74,13 @@ if(showhide == "show"){
           console.log('Sending message:', $scope.text);
           socket.emit('message', $scope.text);
           $scope.text = '';
+        };
+        
+        $scope.search = function search() {
+          console.log('Searching:', $scope.searchTerm);
+          $scope.results = [];
+          socket.emit('search', $scope.searchTerm);
+          $scope.searchTerm = '';
         };
 
         $scope.setName = function setName() {
@@ -187,11 +195,10 @@ if(showhide == "show"){
             </tbody>
           </table>
           <div class="row controls">
-            <form ng-submit="send()">
-              <div class="span2" ><input type="text" class="input-block-level" ng-model="name" readonly="readonly" placeholder="Your Name"></div>
-              <div class="input-append span7">
-                <input type="text" class="span6" ng-model="text" placeholder="Search name/text">
-                <input type="submit" class="span1 btn btn-primary" value="Send" ng-disabled="!text">
+            <form ng-submit="search()">
+              <div class="input-append span12">
+                <input type="text" class="span7" ng-model="searchTerm" placeholder="Search name/text">
+                <input type="submit" class="span2 btn btn-primary" value="Search" ng-disabled="!searchTerm">
               </div>
             </form>
           </div>

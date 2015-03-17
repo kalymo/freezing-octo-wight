@@ -65,6 +65,19 @@ def new_message(message):
         cur.execute(query, (message, session['id']))
         conn.commit()
         
+        
+@socketio.on('search', namespace='/chat')
+def search(searchTerm):
+    if 'username' in session:
+        searchTerm = '%' + searchTerm +'%'
+        conn = connectToDB()
+        cur=conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        query = "SELECT text, username FROM messages JOIN users ON messages.user_id = users.id WHERE text LIKE %s OR username LIKE %s"
+        cur.execute(query, (searchTerm, searchTerm))
+        results = cur.fetchall()
+        for result in results:
+            result = {'text': result['text'], 'name': result['username']}
+            emit('result', result)
     
 @socketio.on('identify', namespace='/chat')
 def on_identify(message):
