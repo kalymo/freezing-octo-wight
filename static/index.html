@@ -9,6 +9,9 @@
       body {
         padding-top: 60px;
       }
+      .current_room {
+        font-weight:bold;
+      }
 
 #popupbox{
 margin: 0; 
@@ -40,6 +43,20 @@ if(showhide == "show"){
         var socket = io.connect('https://' + document.domain + ':' + location.port + '/chat');
 
         //var socket = io.connect();
+        
+        // function refreshRooms()
+        // {
+        //   console.log("refreshRooms");
+        //   $.get( "/room_list", function( data ) {
+        //     $scope.$apply(function(){
+        //       if(!$scope.current_room)
+        //         $scope.current_room=data.rooms[0];
+        //       $scope.rooms = data.rooms;
+        //     });
+        //   });
+        // }
+        // console.log("About to refreshRooms");
+        // refreshRooms();
 
         $scope.messages = [];
         $scope.results = [];
@@ -69,10 +86,17 @@ if(showhide == "show"){
           $scope.roster = names;
           $scope.$apply();
         });
+         socket.on('rooms', function (rooms) {
+          console.log("Got some new rooms");
+          $scope.rooms = rooms;
+          if(!$scope.current_room)
+                $scope.current_room=rooms[0];
+          
+          $scope.$apply();
+        });
 
         $scope.send = function send() {
-          console.log('Sending message:', $scope.text);
-          socket.emit('message', $scope.text);
+          socket.emit('message', {text:$scope.text, room: $scope.current_room});
           $scope.text = '';
         };
         
@@ -99,9 +123,24 @@ if(showhide == "show"){
           socket.emit('login',{'username' :$scope.name2,'password' :$scope.password});
 
         };
+    
+        $scope.changeRoom = function(new_room)
+        {
+          $scope.current_room=new_room;
+        }
+        
+        $scope.createRoom = function()
+        {
+          if($scope.new_room_name.length>0)
+          {
+            superagent.post('/new_room').send({name:$scope.new_room_name}).end(function(err, result){
+              
+            });
+          }
 
-
-
+          $scope.new_room_name='';
+          console.log("Create room: "+$scope.new_room_name);
+        }
       }
     </script>
   </head>
@@ -128,15 +167,6 @@ if(showhide == "show"){
 <br />
 
 </div> 
-
-      
-      
-      
-      
-      
-      
-      
-      
       <div class="navbar navbar-fixed-top navbar-inverse">
         <div class="navbar-inner">
           <div class="pull-right">
@@ -149,6 +179,11 @@ if(showhide == "show"){
       </div>
       <div class="row">
         <div class="span3">
+          <ul class="nav nav-list well">
+            <li class="nav-header">Rooms</li>
+            <li><input ng-model='new_room_name' type='text' style='width:100%'/><div ng-click='createRoom()'>Create</div></li>
+            <li ng-repeat="room in rooms" ng-click="changeRoom(room)" ng-class="{'current_room': room==current_room}">{{room}}</li>
+          </ul>
           <ul class="nav nav-list well">
             <li class="nav-header">Local Users</li>
             <li ng-repeat="user in roster" ng-bind="user">
@@ -167,9 +202,10 @@ if(showhide == "show"){
             <tbody>
               <tr ng-repeat="msg in messages">
                 <td class="span2" ng-bind="msg.name"></td>
-                <td class="span7" ng-bind="msg.text"></td>
+                <td class="span7">{{msg.room}}--{{msg.text}}</td>
               </tr>
             </tbody>
+            
           </table>
           <div class="row controls">
             <form ng-submit="send()">
@@ -207,6 +243,7 @@ if(showhide == "show"){
       </div>
     </div>
         <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
+          <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/superagent/0.15.7/superagent.min.js"></script>
     <script src="/js/jquery.min.js"></script>
     <script src="/js/bootstrap.min.js"></script>
     <script src="/js/angular.min.js"></script>

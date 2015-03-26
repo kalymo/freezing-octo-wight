@@ -59,7 +59,7 @@ def new_message(message):
         messages.append(tmp)
         emit('message', tmp, broadcast=True)
         
-        conn = connectToDB()
+        conn = connectToDB() 
         cur=conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         query = "INSERT INTO messages VALUES(DEFAULT, %s, %s)" 
         cur.execute(query, (message, session['id']))
