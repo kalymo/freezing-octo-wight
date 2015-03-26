@@ -2,7 +2,7 @@ import os
 import uuid
 import psycopg2
 import psycopg2.extras
-from flask import Flask, session
+from flask import Flask, session, jsonify, request
 from flask.ext.socketio import SocketIO, emit
 
 #login
@@ -17,6 +17,7 @@ socketio = SocketIO(app)
 
 messages = [{'text':'test', 'name':'testName'}]
 users = {}
+rooms = ['General']
 
 def connectToDB():
   connectionString = 'dbname=irc user=postgres password=postgres host=localhost'
@@ -47,7 +48,8 @@ def test_connect():
     users[session['uuid']]={'username':'New User'}
     updateRoster()
 
-
+def updateRooms():
+    socketio.emit('rooms', rooms)
     
 
 @socketio.on('message', namespace='/chat')
@@ -55,7 +57,7 @@ def new_message(message):
     #tmp = {'text':message, 'name':'testName'}
     if 'username' in session:
         #print("his name is", session['username'])  //Debug code only
-        tmp = {'text':message, 'name':users[session['uuid']]['username']}
+        tmp = {'text':message['text'], 'room':message['room'], 'name':users[session['uuid']]['username']}
         messages.append(tmp)
         emit('message', tmp, broadcast=True)
         
@@ -81,9 +83,19 @@ def search(searchTerm):
     
 @socketio.on('identify', namespace='/chat')
 def on_identify(message):
-    print 'identify' + message
-    users[session['uuid']]={'username':message}
-    updateRoster()
+    if 'uuid' in session:
+        users[session['uuid']]={'username':message}
+        updateRoster()
+    else:
+        print 'sending information'
+        session['uuid']=uuid.uuid1()
+        session['username']='starter name'
+  
+        updateRoster()
+        updateRooms()
+
+        for message in messages:
+            emit('message', message)
 
 
 @socketio.on('login', namespace='/chat')
@@ -116,6 +128,15 @@ def on_disconnect():
     if session['uuid'] in users:
         del users[session['uuid']]
         updateRoster()
+        
+@app.route('/new_room', methods=['POST'])
+def new_room():
+    rooms.append(request.get_json()['name'])
+    print 'updating rooms'
+    updateRooms()
+    print 'back'
+
+    return jsonify(success= "ok")
 
 @app.route('/')
 def hello_world():
