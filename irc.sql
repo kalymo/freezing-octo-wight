@@ -43,6 +43,24 @@ INSERT INTO messages (text, user_id) VALUES ('I hear the Ood calling! Time to fl
 INSERT INTO messages (text, user_id) VALUES ('I love carrots!', 2);
 INSERT INTO messages (text, user_id) VALUES ('take a left at albuquerque', 2);
 
+--
+-- Table structure for table rooms
+--
 
+DROP TABLE IF EXISTS rooms;
+CREATE TABLE rooms (
+  id serial NOT NULL,
+  name varchar(30) NOT NULL default '',
+  PRIMARY KEY  (id)
+) ;
 
+--
+-- Table structure for table users_rooms
+--
+
+DROP TABLE IF EXISTS users_rooms;
+CREATE TABLE users_rooms (
+  user_id int,
+  room_id int
+) ;
 
